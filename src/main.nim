@@ -1,5 +1,6 @@
 import std/enumerate
 import pkg/[oolib, nico]
+import pkg/print
 
 const
   orgName* = "org"
@@ -30,7 +31,7 @@ class pub Board:
       for x in 0 ..< self.dimension:
         column.add(GridValue.none)
         self.availablePositions.add((x, y))
-        self.successorEvaluations.add(0)
+        self.successorEvaluations.add(-1)
       self.grid.add(column)
 
   proc getAvailablePositions*(grid: seq[seq[GridValue]]): seq[(int, int)] = 
@@ -42,10 +43,12 @@ class pub Board:
   proc placePiece*(pos: (int, int), player: GridValue): bool =
     if self.grid[pos[1]][pos[0]] == GridValue.none:
       self.grid[pos[1]][pos[0]] = player
-      self.availablePositions.del(self.availablePositions.find(pos))
-      result = true
+      let ind = self.availablePositions.find(pos)
+      self.availablePositions.del(ind)
+      self.successorEvaluations.del(ind)
+      return true
     else:
-      result = false
+      return false
 
   proc hasPlayerWon*(player: GridValue): bool =
     # assertions for diagonal wins
@@ -79,8 +82,9 @@ class pub Board:
 
   proc getBestMove*: (int, int) =
     # add randomisation in cases where multiple moves exist
-    var max, best: int
-    max = -1
+    var
+      max = -1
+      best = 0
     for i, score in enumerate(self.successorEvaluations):
       if max < score:
         max = score
@@ -92,36 +96,46 @@ class pub Board:
       result = -1
     elif player == GridValue.naught:
       result = 1
-
       var
-        currentScore: int
-        grid = grid
+        currentScore = 0
+        ogX = 0
+        ogY = 0
+        ogValue = GridValue.none 
+        gridCopy = grid
         availablePositions = self.getAvailablePositions(self.grid)
+        successorEvaluations = self.successorEvaluations
 
       if self.hasPlayerWon(GridValue.cross):
         result = 1
       elif self.hasPlayerWon(GridValue.naught):
         result = -1
+      elif availablePositions.len == 0:
+        result = 0
       
       for i, pos in enumerate(availablePositions):
+        ogX = pos[0]
+        ogY = pos[1]
+        ogValue = gridCopy[ogY][ogX]
         if player == GridValue.cross:
-          if grid[pos[1]][pos[0]] == GridValue.none:
-            grid[pos[1]][pos[0]] = GridValue.cross
-          currentScore = self.minimax(depth + 1, GridValue.naught, grid)
+          if gridCopy[ogY][ogX] == GridValue.none:
+            gridCopy[ogY][ogX] = GridValue.cross
+          currentScore = self.minimax(depth + 1, GridValue.naught, gridCopy)
           if currentScore > result:
             result = currentScore
         elif player == GridValue.naught:
-          if grid[pos[1]][pos[0]] == GridValue.none:
-            grid[pos[1]][pos[0]] = GridValue.naught
-          currentScore = self.minimax(depth + 1, GridValue.cross, grid)
-          if currentScore > result:
+          if gridCopy[ogY][ogX] == GridValue.none:
+            gridCopy[ogY][ogX] = GridValue.naught
+          currentScore = self.minimax(depth + 1, GridValue.cross, gridCopy)
+          if currentScore < result:
             result = currentScore
 
         if depth == 0:
-          self.successorEvaluations[i] = result
+          successorEvaluations[i] = result
         
-        grid[pos[0]][pos[1]] = GridValue.none
-
+        gridCopy[ogY][ogX] = ogValue
+      print successorEvaluations
+      print self.successorEvaluations
+      # self.successorEvaluations = successorEvaluations
 
 class pub TicTacToe:
   var
@@ -131,7 +145,7 @@ class pub TicTacToe:
     offset = 16
     size = 32
     outOfBounds = false
-    playedPosition = true
+    successfulMove = true
     gameOver = false
     gameResult = GridValue.none
     turn = GridValue.cross
@@ -190,6 +204,7 @@ class pub TicTacToe:
     setColor(7)
     printc(message, xCenter, yCenter)
 
+
 var ttt = newTicTacToe()
 
 
@@ -207,11 +222,10 @@ proc gameDraw*() =
       ttt.drawPiece(ttt.board.grid[y][x], square)
 
   if ttt.outOfBounds:
-    ttt.playedPosition = true
     setColor(4)
     printc("Please click within the grid!", screenWidth div 2, 120)
   
-  if not ttt.playedPosition:
+  if not ttt.successfulMove:
     setColor(4)
     printc("This position has been played!", screenWidth div 2, 120)
   
@@ -230,19 +244,17 @@ proc gameUpdate*(dt: float32) =
       let pos = mouse()
       ttt.outOfBounds = ttt.isOutOfBounds(pos, ttt.gridSquare)
       if not ttt.outOfBounds:
-        while ttt.turn == GridValue.cross:
           let
             x = (pos[0] - ttt.offset) div ttt.size
             y = (pos[1] - ttt.offset) div ttt.size
-          ttt.playedPosition = ttt.board.placePiece((x, y), GridValue.cross)
-          ttt.turn = GridValue.naught
-        ttt.outOfBounds = false
+          ttt.successfulMove = ttt.board.placePiece((x, y), GridValue.cross)
+          if ttt.successfulMove:
+            ttt.turn = GridValue.naught
       (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver()
-  elif ttt.turn == GridValue.naught and ttt.gameOver == false:
-    while ttt.turn == GridValue.naught:
-      discard ttt.board.minimax(0, GridValue.naught, ttt.board.grid)
-      ttt.board.availablePositions = ttt.board.getAvailablePositions(ttt.board.grid)
-      ttt.playedPosition = ttt.board.placePiece(ttt.board.getBestMove(), GridValue.naught)
+  elif ttt.turn == GridValue.naught and ttt.gameOver == false:    
+    discard ttt.board.minimax(0, GridValue.cross, ttt.board.grid)
+    ttt.successfulMove = ttt.board.placePiece(ttt.board.getBestMove(), GridValue.naught)
+    if ttt.successfulMove:
       ttt.turn = GridValue.cross
     (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver()
 
