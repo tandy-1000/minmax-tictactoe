@@ -1,4 +1,4 @@
-import std/enumerate
+import std/[random, enumerate]
 import pkg/[oolib, nico]
 import pkg/print
 
@@ -11,135 +11,176 @@ type
     none = " ", naught = "O", cross = "X"
 
 
-class pub Square:
+class pub Position:
   var
-    x*, y*, x1*, y1*: int
+    i*, score*, depth*: int
+
+  proc `new`(i: int, score, depth: int = 0) = 
+    self.i = i
+    self.score = score
+    self.depth = depth
+
+
+## proc for checking equality between Positions
+proc `==`(a, b: Position): bool = system.`==`(a, b) or (a.i == b.i)
+
+
+## proc for checking score between Positions, enables `min` / `max`
+proc `<` (a, b: Position): bool = a.score < b.score
+
+
+## proc for converting 2D array coordinates to a 1D array index
+proc xyIndex*(x, y: int, dimension: int = 3): int = y * dimension + x
+
+
+proc debugPrint(position: Position): string =
+  let str = "i " & $position.i & " score " & $position.score & " depth " & $position.depth
+  return str
+
+proc debugGrid(grid: seq[GridValue]): string =
+  for y in 0 ..< 3:
+    for x in 0 ..< 3:
+      result.add $grid[xyIndex(x, y)] & " "
+    result.add "\n"
+
+proc debug(positions: seq[Position]): string =
+  for position in positions:
+    result.add "\n" & debugPrint(position)
 
 
 class pub Board:
   var
-    dimension: int
-    grid*: seq[seq[GridValue]]
-    availablePositions*: seq[(int, int)]
-    successorEvaluations*: seq[int]
-  
+    dimension*: int
+    grid*: seq[GridValue]
+    availablePositions*: seq[Position]
+
   proc `new`(dimension: int = 3): Board =
     self.dimension = dimension
-    var column: seq[GridValue]
-    for y in 0 ..< self.dimension:
-      column = @[]
-      for x in 0 ..< self.dimension:
-        column.add(GridValue.none)
-        self.availablePositions.add((x, y))
-        self.successorEvaluations.add(-1)
-      self.grid.add(column)
+    for i in 0 ..< self.dimension * self.dimension:
+      self.grid.add(GridValue.none)
+      self.availablePositions.add(newPosition(i))
 
-  proc getAvailablePositions*(grid: seq[seq[GridValue]]): seq[(int, int)] = 
-    for y in 0 ..< self.dimension:
-      for x in 0 ..< self.dimension:
-        if grid[y][x] == GridValue.none:
-          result.add((x, y))
+  proc find(pos: Position, positions: seq[Position]): int =
+    ## Find a Position object in a sequence of Positions
+    var ind = -1
+    for i, position in enumerate(positions):
+      if position == pos:
+        ind = i
+    return ind
 
-  proc placePiece*(pos: (int, int), player: GridValue): bool =
-    if self.grid[pos[1]][pos[0]] == GridValue.none:
-      self.grid[pos[1]][pos[0]] = player
-      let ind = self.availablePositions.find(pos)
-      self.availablePositions.del(ind)
-      self.successorEvaluations.del(ind)
+  proc getAvailablePositions*(grid: seq[GridValue]): seq[Position] =
+    var
+      # ind = -1
+      pos: Position
+    for i in 0 ..< self.dimension * self.dimension:
+      if grid[i] == GridValue.none:
+        pos = newPosition(i)
+        # ind = self.find(pos, availablePositions)
+        # if ind > -1:
+        #   result.add availablePositions[ind]
+        # else:
+        result.add pos
+
+  proc placePiece*(pos: Position, player: GridValue): bool =
+    var ind = -1    
+    if self.grid[pos.i] == GridValue.none:
+      self.grid[pos.i] = player
+      ind = self.find(pos, self.availablePositions)
+      if ind > -1:
+        self.availablePositions.del(ind)
       return true
     else:
       return false
 
-  proc hasPlayerWon*(player: GridValue): bool =
-    # assertions for diagonal wins
+  proc hasPlayerWon*(player: GridValue, grid: seq[GridValue]): bool =
+    ## assertions for diagonal wins
     let
-      diagonalWinLeft = self.grid[0][0] == player and self.grid[1][1] == player and self.grid[2][2] == player
-      diagonalWinRight = self.grid[0][2] == player and self.grid[1][1] == player and self.grid[0][2] == player and self.grid[2][0] == player
+      diagonalWinLeft = grid[0] == player and grid[4] == player and grid[8] == player
+      diagonalWinRight = grid[2] == player and grid[4] == player and grid[6] == player
     if diagonalWinLeft or diagonalWinRight:
       result = true
 
     var rowWin, columnWin: bool
     for i in 0 ..< self.dimension:
-      # assertions for each row / column win
-      rowWin = self.grid[i][0] == player and self.grid[i][1] == player and self.grid[i][2] == player
-      columnWin = self.grid[0][i] == player and self.grid[1][i] == player and self.grid[2][i] == player
+      ## assertions for each row / column win
+      rowWin = grid[xyIndex(0, i)] == player and grid[xyIndex(1, i)] == player and grid[xyIndex(2, i)] == player
+      columnWin = grid[xyIndex(i, 0)] == player and grid[xyIndex(i, 1)] == player and grid[xyIndex(i, 2)] == player
       if rowWin or columnWin:
         result = true
 
-  proc isGameOver*: (bool, GridValue) =
+  proc isGameOver*(grid: seq[GridValue], availablePositions: seq[Position]): (bool, GridValue) =
     # checks whether the board is full
     var
       winner = GridValue.none
       boardFull = false
-
-    if self.availablePositions.len == 0:
+    
+    if availablePositions.len == 0:
       boardFull = true
 
     for player in {GridValue.cross, GridValue.naught}:
-      if self.hasPlayerWon(player):
+      if self.hasPlayerWon(player, grid):
         winner = player
     result = (boardFull, winner)
 
-  proc getBestMove*: (int, int) =
-    # add randomisation in cases where multiple moves exist
+  proc minimax(player: GridValue, grid: seq[GridValue], depth: int): int =
+    let
+      availablePositions = self.getAvailablePositions(grid)
+      (gameOver, winner) = self.isGameOver(grid, availablePositions)
+ 
+    if gameOver:
+      if winner == GridValue.naught:
+        return 1
+      elif winner == GridValue.cross:
+        return -1
+      else:
+        return 0
+
     var
-      max = -1
-      best = 0
-    for i, score in enumerate(self.successorEvaluations):
-      if max < score:
-        max = score
-        best = i
-    return self.availablePositions[best]
+      gridCopy: seq[GridValue]
+      bestScore: int
+      ind = -1
 
-  proc minimax*(depth: int, player: GridValue, grid: seq[seq[GridValue]]): int =
-    if player == GridValue.cross:
-      result = -1
-    elif player == GridValue.naught:
-      result = 1
-      var
-        currentScore = 0
-        ogX = 0
-        ogY = 0
-        ogValue = GridValue.none 
-        gridCopy = grid
-        availablePositions = self.getAvailablePositions(self.grid)
-        successorEvaluations = self.successorEvaluations
+    if player == GridValue.naught:
+      bestScore = -1
+    else:
+      bestScore = 1
 
-      if self.hasPlayerWon(GridValue.cross):
-        result = 1
-      elif self.hasPlayerWon(GridValue.naught):
-        result = -1
-      elif availablePositions.len == 0:
-        result = 0
+    for pos in availablePositions:
+      # Copy the current state of the board
+      gridCopy = grid
+      # Add a move on the next empty spot
+      gridCopy[pos.i] = player
+      # Call this method recursively on the current move changing the player
+      if player == GridValue.naught:
+        bestScore = max(bestScore, self.minimax(GridValue.cross, gridCopy, depth + 1))
+      else:
+        bestScore = min(bestScore, self.minimax(GridValue.naught, gridCopy, depth + 1))
       
-      for i, pos in enumerate(availablePositions):
-        ogX = pos[0]
-        ogY = pos[1]
-        ogValue = gridCopy[ogY][ogX]
-        if player == GridValue.cross:
-          if gridCopy[ogY][ogX] == GridValue.none:
-            gridCopy[ogY][ogX] = GridValue.cross
-          currentScore = self.minimax(depth + 1, GridValue.naught, gridCopy)
-          if currentScore > result:
-            result = currentScore
-        elif player == GridValue.naught:
-          if gridCopy[ogY][ogX] == GridValue.none:
-            gridCopy[ogY][ogX] = GridValue.naught
-          currentScore = self.minimax(depth + 1, GridValue.cross, gridCopy)
-          if currentScore < result:
-            result = currentScore
+      if depth == 0:
+        ind = self.find(pos, self.availablePositions)
+        if ind > -1:
+          self.availablePositions[ind] = pos
+      
+    # echo "minmax", debug self.availablePositions
+    return bestScore
 
-        if depth == 0:
-          successorEvaluations[i] = result
-        
-        gridCopy[ogY][ogX] = ogValue
-      print successorEvaluations
-      print self.successorEvaluations
-      # self.successorEvaluations = successorEvaluations
+  proc getBestScore*(player: GridValue, depth = 0): Position =
+    discard self.minimax(player, self.grid, depth)
+    echo "bestscore", debug self.availablePositions
+    
+    if player == GridValue.naught:
+      return max(self.availablePositions)
+    else:
+      return min(self.availablePositions)
+
+class pub Square:
+  var
+    x*, y*, x1*, y1*: int
+
 
 class pub TicTacToe:
   var
-    gridBounds: seq[seq[Square]]
+    gridBounds: seq[Square]
     gridSquare: Square
     board: Board = newBoard()
     offset = 16
@@ -153,20 +194,15 @@ class pub TicTacToe:
   proc `new`: TicTacToe =
     var
       x, y, x1, y1: int = self.offset
-      gridRow: seq[Square]
-      gridColumns: seq[seq[Square]]
-    for row in self.board.grid:
+    for row in 0 ..< self.board.dimension:
       x = self.offset
       x1 = self.offset
-      gridRow = @[]
       y1 = y + self.size
-      for column in row:
+      for column in 0 ..< self.board.dimension:
         x1 = x + self.size
-        gridRow.add(newSquare(x, y, x1, y1))
+        self.gridBounds.add(newSquare(x, y, x1, y1))
         x = x1
       y = y1
-      gridColumns.add(gridRow)
-    self.gridBounds = gridColumns
     self.gridSquare = newSquare(self.offset, self.offset, y, y)
 
   proc isOutOfBounds*(pos: (int, int), square: Square): bool =
@@ -206,29 +242,31 @@ class pub TicTacToe:
 
 
 var ttt = newTicTacToe()
+randomize()
 
 
 proc gameInit*() =
   loadFont(0, "font.png")
 
+
 proc gameDraw*() =
   cls()
   setColor(7)
   printc("Tic Tac Toe", screenWidth div 2, 8)
-    
-  for y, row in enumerate(ttt.gridBounds):
-    for x, square in enumerate(row):
-      rect(square.x, square.y, square.x1, square.y1)
-      ttt.drawPiece(ttt.board.grid[y][x], square)
+
+  for i, square in enumerate(ttt.gridBounds):
+    setColor(i+1)
+    rect(square.x, square.y, square.x1, square.y1)
+    ttt.drawPiece(ttt.board.grid[i], square)
 
   if ttt.outOfBounds:
     setColor(4)
     printc("Please click within the grid!", screenWidth div 2, 120)
-  
+
   if not ttt.successfulMove:
     setColor(4)
     printc("This position has been played!", screenWidth div 2, 120)
-  
+
   if ttt.gameResult == GridValue.cross:
     ttt.gameOverMessage("You Win!", 3)
   elif ttt.gameResult == GridValue.naught:
@@ -236,27 +274,30 @@ proc gameDraw*() =
   elif ttt.gameResult == GridValue.none and ttt.gameOver == true:
     ttt.gameOverMessage("Game Over.", 4)
 
+
 proc gameUpdate*(dt: float32) =
   setColor(7)
-  (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver()
+  # ttt.board.availablePositions = ttt.board.getAvailablePositions(ttt.board.grid)
+  (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver(ttt.board.grid, ttt.board.availablePositions)
   if ttt.turn == GridValue.cross and ttt.gameOver == false:
     if mousebtnp(0):
       let pos = mouse()
       ttt.outOfBounds = ttt.isOutOfBounds(pos, ttt.gridSquare)
       if not ttt.outOfBounds:
-          let
-            x = (pos[0] - ttt.offset) div ttt.size
-            y = (pos[1] - ttt.offset) div ttt.size
-          ttt.successfulMove = ttt.board.placePiece((x, y), GridValue.cross)
-          if ttt.successfulMove:
-            ttt.turn = GridValue.naught
-      (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver()
-  elif ttt.turn == GridValue.naught and ttt.gameOver == false:    
-    discard ttt.board.minimax(0, GridValue.cross, ttt.board.grid)
-    ttt.successfulMove = ttt.board.placePiece(ttt.board.getBestMove(), GridValue.naught)
+        let
+          x = (pos[0] - ttt.offset) div ttt.size
+          y = (pos[1] - ttt.offset) div ttt.size
+          i = xyIndex(x, y)
+        ttt.successfulMove = ttt.board.placePiece(newPosition(i), GridValue.cross)
+        if ttt.successfulMove:
+          ttt.turn = GridValue.naught
+  elif ttt.turn == GridValue.naught and ttt.gameOver == false:
+    let move = ttt.board.getBestScore(GridValue.naught)
+    ttt.successfulMove = ttt.board.placePiece(newPosition(move.i), GridValue.naught)
     if ttt.successfulMove:
       ttt.turn = GridValue.cross
-    (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver()
+
+  
 
 
 nico.init(orgName, appName)
