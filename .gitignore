@@ -2,6 +2,9 @@ nimcache/
 nimblecache/
 htmldocs/
 
-# ignore executables & dlls
-*.*
+# ignore binaries
 *
+!/**/
+!*.*
+*.exe
+*.dll
