@@ -62,7 +62,7 @@ class pub Board:
         ind = i
     return ind
 
-  proc cleanGrid*() =
+  proc cleanGrid* =
     for i in 0 ..< self.grid.len:
       if self.grid[i] in {GridValue.pNaught, GridValue.pCross}:
         self.grid[i] = GridValue.none
@@ -199,6 +199,7 @@ class pub TicTacToe:
     gameOver* = false
     gameResult* = GridValue.none
     turn* = GridValue.cross
+    showRules* = false
 
   proc `new`: TicTacToe =
     var
@@ -238,6 +239,27 @@ class pub TicTacToe:
         y2 = (y1 + y) div 2
         r = (x1 - x) div 2
       circ(x2, y2, r)
+
+  proc drawRuleButton* =
+    setColor(7)
+    boxfill(118, 118, 7, 7)
+    setColor(0)
+    printc("?", 122, 119)
+
+  proc displayRules* =
+    setColor(0)
+    rectfill(16, 16, 112, 112)
+    setColor(7)
+    rect(16, 16, 112, 112)
+    printc("Rules:", screenWidth div 2, 24)
+    printc("You may make a move", screenWidth div 2, 36)
+    printc("where naught hasn't.", screenWidth div 2, 44)
+    printc("You win if you can", screenWidth div 2, 60)
+    printc("get three of your", screenWidth div 2, 68)
+    printc("symbols in a row,", screenWidth div 2, 76)
+    printc("horizontally,", screenWidth div 2, 84)
+    printc("vertically,", screenWidth div 2, 92)
+    printc("or diagonally.", screenWidth div 2, 100)
 
   proc gameOverMessage*(message: string, color: int) =
     let
