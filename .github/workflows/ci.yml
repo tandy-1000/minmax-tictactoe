@@ -32,7 +32,7 @@ jobs:
         run: nimble deps
 
       - name: Install dependencies
-        run: nimble build
+        run: nimble install -y --depsOnly
 
       - name: Run tests
         run: nimble test
