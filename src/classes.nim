@@ -3,7 +3,7 @@ import pkg/[nico, oolib]
 
 type
   GridValue* = enum
-    none = " ", naught = "O", cross = "X"
+    none = " ", naught = "O", pNaught = "O", cross = "X", pCross = "X"
 
 
 class pub Position:
@@ -62,12 +62,17 @@ class pub Board:
         ind = i
     return ind
 
+  proc cleanGrid*() =
+    for i in 0 ..< self.grid.len:
+      if self.grid[i] in {GridValue.pNaught, GridValue.pCross}:
+        self.grid[i] = GridValue.none
+
   proc getAvailablePositions*(grid: seq[GridValue]): seq[Position] =
     var
       ind = -1
       pos: Position
     for i in 0 ..< grid.len:
-      if grid[i] == GridValue.none:
+      if grid[i] in {GridValue.none, GridValue.pNaught, GridValue.pCross}:
         pos = newPosition(i)
         ind = self.find(pos, result)
         if ind >= 0:
@@ -77,7 +82,7 @@ class pub Board:
 
   proc placePiece*(pos: Position, player: GridValue): bool =
     var ind = -1
-    if self.grid[pos.i] == GridValue.none:
+    if self.grid[pos.i] in {GridValue.none, GridValue.pNaught, GridValue.pCross}:
       self.grid[pos.i] = player
       ind = self.find(pos, self.availablePositions)
       if ind >= 0:
@@ -220,10 +225,14 @@ class pub TicTacToe:
       x1 = gridBound.x1 - offset
       y1 = gridBound.y1 - offset
     setColor(7)
-    if val == GridValue.cross:
+    if val == GridValue.cross or val == GridValue.pCross:
+      if val == GridValue.pCross:
+        setColor(5)
       line(x, y, x1, y1)
       line(x1, y, x, y1)
-    elif val == GridValue.naught:
+    elif val == GridValue.naught or val == GridValue.pNaught:
+      if val == GridValue.pNaught:
+        setColor(5)
       let
         x2 = (x1 + x) div 2
         y2 = (y1 + y) div 2
