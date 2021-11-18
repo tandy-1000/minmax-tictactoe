@@ -28,8 +28,11 @@ jobs:
           path: nim
           version: ${{ matrix.branch }}
 
+      - name: Get SDL
+        run: nimble deps
+
       - name: Install dependencies
-        run: nimble install -y --depsOnly
+        run: nimble build
 
       - name: Run tests
         run: nimble test
