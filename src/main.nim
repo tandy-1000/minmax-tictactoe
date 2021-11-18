@@ -39,11 +39,25 @@ proc gameDraw*() =
 
 proc gameUpdate*(dt: float32) =
   setColor(7)
+  ttt.board.cleanGrid()
   ttt.board.availablePositions = ttt.board.getAvailablePositions(ttt.board.grid)
   (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver(ttt.board.grid, ttt.board.availablePositions)
+  var
+    pos: (int, int)
+    pressed = false
   if ttt.turn == GridValue.cross and ttt.gameOver == false:
-    if mousebtnp(0):
-      let pos = mouse()
+    pos = mouse()
+    if not ttt.isOutOfBounds(pos, ttt.gridSquare):
+      let
+        x = (pos[0] - ttt.offset) div ttt.size
+        y = (pos[1] - ttt.offset) div ttt.size
+        i = xyIndex(x, y)
+      if ttt.board.grid[i] == GridValue.none:
+        ttt.board.grid[i] = GridValue.pCross
+    pressed = mousebtnp(0)
+
+    if pressed:
+      pos = mouse()
       ttt.outOfBounds = ttt.isOutOfBounds(pos, ttt.gridSquare)
       if not ttt.outOfBounds:
         let
