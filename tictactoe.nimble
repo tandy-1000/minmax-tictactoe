@@ -56,4 +56,4 @@ task androidr, "Release build for android":
       exec "./gradlew assembleDebug"
 
 task test, "Run tests":
-  exec &"nim c -r tests/test.nim"
+  exec &"nim r tests/test.nim"
