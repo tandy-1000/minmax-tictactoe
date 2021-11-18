@@ -17,10 +17,15 @@ proc gameDraw*() =
   setColor(7)
   printc("Tic Tac Toe", screenWidth div 2, 8)
 
+  ttt.drawRuleButton()
+
   for i, square in enumerate(ttt.gridBounds):
     setColor(i+1)
     rect(square.x, square.y, square.x1, square.y1)
     ttt.drawPiece(ttt.board.grid[i], square)
+
+  if ttt.showRules:
+    ttt.displayRules()
 
   if ttt.outOfBounds:
     setColor(4)
@@ -54,12 +59,19 @@ proc gameUpdate*(dt: float32) =
         i = xyIndex(x, y)
       if ttt.board.grid[i] == GridValue.none:
         ttt.board.grid[i] = GridValue.pCross
-    pressed = mousebtnp(0)
 
+    pressed = mousebtnp(0)
     if pressed:
       pos = mouse()
-      ttt.outOfBounds = ttt.isOutOfBounds(pos, ttt.gridSquare)
-      if not ttt.outOfBounds:
+      if ttt.isOutOfBounds(pos, ttt.gridSquare):
+        if pos[0] >= 118 and pos[0] <= 125 and pos[1] >= 118 and pos[1] <= 125:
+          if ttt.showRules:
+            ttt.showRules = false
+          else:
+            ttt.showRules = true
+        else:
+          ttt.outOfBounds = true
+      else:
         let
           x = (pos[0] - ttt.offset) div ttt.size
           y = (pos[1] - ttt.offset) div ttt.size
