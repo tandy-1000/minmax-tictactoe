@@ -12,5 +12,6 @@ Compile a release executable: `nimble release`
  - [x] Show potential move on mouse hover
  - [x] Add rules page
  - [x] Add varying difficulty level
- - [ ] Add start page where you choose player / difficulty
+ - [x] Add start page where you choose player / difficulty
+ - [x] Refactor to make player selectable
  - [ ] Add hints page
