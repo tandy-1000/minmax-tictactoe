@@ -4,7 +4,7 @@ import pkg/[nico, oolib]
 
 type
   GridValue* = enum
-    none = " ", naught, pNaught = "O", cross, pCross = "X"
+    none = " ", naught, pNaught, cNaught = "O", cross, pCross, cCross = "X"
   Difficulty* = enum
     easy = 6, medium = 7, hard = 8, impossible = 9
 
@@ -133,6 +133,12 @@ class pub Board:
         gameOver = true
     result = (gameOver, winner)
 
+  proc getClueValue*(player: GridValue): GridValue =
+    if player == GridValue.cross:
+      return GridValue.cCross
+    elif player == GridValue.naught:
+      return GridValue.cNaught
+
   proc opposingPlayer*(player: GridValue): GridValue =
     if player == GridValue.cross:
       return GridValue.naught
@@ -208,7 +214,10 @@ class pub Board:
     beta = high(BiggestInt)
   ): Position =
     discard self.minimax(player, self.grid, depth, alpha, beta)
-    return max(self.availablePositions)
+    if player == self.ai:
+      return max(self.availablePositions)
+    elif player == self.human:
+      return min(self.availablePositions)
 
   proc getRandMove*: Position =
     return sample(self.availablePositions)
@@ -237,6 +246,7 @@ class pub TicTacToe:
     size* = 32
     started* = false
     showRules* = false
+    showClues* = false
     outOfBounds* = false
     successfulMove* = true
 
@@ -322,25 +332,34 @@ class pub TicTacToe:
       x1 = gridBound.x1 - offset
       y1 = gridBound.y1 - offset
     setColor(7)
-    if val == GridValue.cross or val == GridValue.pCross:
+    if val in {GridValue.cross, GridValue.pCross, GridValue.cCross}:
       if val == GridValue.pCross:
         setColor(5)
+      elif val == GridValue.cCross:
+        setColor(3)
       line(x, y, x1, y1)
       line(x1, y, x, y1)
-    elif val == GridValue.naught or val == GridValue.pNaught:
+    elif val in {GridValue.naught, GridValue.pNaught, GridValue.cNaught}:
       if val == GridValue.pNaught:
         setColor(5)
+      elif val == GridValue.cNaught:
+        setColor(3)
       let
         x2 = (x1 + x) div 2
         y2 = (y1 + y) div 2
         r = (x1 - x) div 2
       circ(x2, y2, r)
 
-  proc drawRuleButton* =
+  proc drawHelpButton* =
     setColor(7)
     boxfill(118, 118, 7, 7)
     setColor(0)
     printc("?", 122, 119)
+
+  proc displayClues* =
+    if self.showClues:
+      let pos = self.board.getBestMove(self.board.human)
+      self.drawPiece(self.board.getClueValue(self.board.human), self.gridBounds[pos.i])
 
   proc displayRules* =
     if self.showRules:

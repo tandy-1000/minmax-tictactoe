@@ -15,20 +15,20 @@ proc gameInit*() =
 proc gameDraw*() =
   if not ttt.started:
     ttt.drawStartPage()
-
+    ttt.drawHelpButton()
+    ttt.displayRules()
   else:
     cls()
     setColor(7)
     printc("Tic Tac Toe", screenWidth div 2, 8)
-
-    ttt.drawRuleButton()
 
     for i, square in enumerate(ttt.gridBounds):
       setColor(i+1)
       rect(square.x, square.y, square.x1, square.y1)
       ttt.drawPiece(ttt.board.grid[i], square)
 
-    ttt.displayRules()
+    ttt.drawHelpButton()
+    ttt.displayClues()
 
     if ttt.outOfBounds:
       setColor(4)
@@ -71,6 +71,8 @@ proc gameUpdate*(dt: float32) =
         ttt.board.turn = ttt.board.human
       elif ttt.isInBounds(pos, newSquare(52, 102, 76, 114)):
         ttt.started = true
+      elif ttt.isInBounds(pos, newSquare(118, 118, 125, 125)):
+        ttt.showRules = not ttt.showRules
   else:
     ttt.board.cleanGrid()
     ttt.board.availablePositions = ttt.board.getAvailablePositions(ttt.board.grid)
@@ -90,7 +92,7 @@ proc gameUpdate*(dt: float32) =
         pos = mouse()
         if ttt.isOutOfBounds(pos, ttt.gridSquare):
           if ttt.isInBounds(pos, newSquare(118, 118, 125, 125)):
-            ttt.showRules = not ttt.showRules
+            ttt.showClues = not ttt.showClues
             ttt.outOfBounds = false
           else:
             ttt.outOfBounds = true
