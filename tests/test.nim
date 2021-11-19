@@ -18,7 +18,7 @@ suite "Position tests":
 suite "Board tests":
   setup:
     let
-      board = newBoard()
+      board = newBoard(difficulty = Difficulty.impossible)
       player = GridValue.cross
       positions = @[newPosition(0), newPosition(1)]
 
@@ -171,7 +171,7 @@ suite "Board tests":
       ]
     board.grid = grid
     board.availablePositions = board.getAvailablePositions(grid)
-    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta, true)
+    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta)
     check position.i == 6
 
   test "Get best move: minimise loss":
@@ -198,7 +198,7 @@ suite "Board tests":
       ]
     board.grid = grid
     board.availablePositions = board.getAvailablePositions(grid)
-    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta, true)
+    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta)
     check position.i == 6
 
   test "Get best move: maximise win":

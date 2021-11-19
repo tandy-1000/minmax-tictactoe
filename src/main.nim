@@ -38,11 +38,11 @@ proc gameDraw*() =
       setColor(4)
       printc("This position has been played!", screenWidth div 2, 120)
 
-    if ttt.gameResult == ttt.human:
+    if ttt.board.gameResult == ttt.board.human:
       ttt.gameOverMessage("You Win!", 3)
-    elif ttt.gameResult == ttt.ai:
+    elif ttt.board.gameResult == ttt.board.ai:
       ttt.gameOverMessage("You Lose!", 4)
-    elif ttt.gameResult == GridValue.none and ttt.gameOver == true:
+    elif ttt.board.gameResult == GridValue.none and ttt.board.gameOver == true:
       ttt.gameOverMessage("Game Over.", 4)
 
 proc gameUpdate*(dt: float32) =
@@ -54,28 +54,28 @@ proc gameUpdate*(dt: float32) =
     if pressed:
       pos = mouse()
       if ttt.isInBounds(pos, newSquare(27, 44, 49, 56)):
-        ttt.difficulty = Difficulty.easy
+        ttt.board.difficulty = Difficulty.easy
       elif ttt.isInBounds(pos, newSquare(50, 44, 78, 56)):
-        ttt.difficulty = Difficulty.medium
+        ttt.board.difficulty = Difficulty.medium
       elif ttt.isInBounds(pos, newSquare(79, 44, 101, 56)):
-        ttt.difficulty = Difficulty.hard
+        ttt.board.difficulty = Difficulty.hard
       elif ttt.isInBounds(pos, newSquare(52, 74, 64, 86)):
-        ttt.human = GridValue.naught
-        ttt.humanPotential = GridValue.pNaught
-        ttt.ai = GridValue.cross
-        ttt.turn = ttt.human
+        ttt.board.human = GridValue.naught
+        ttt.board.humanPotential = GridValue.pNaught
+        ttt.board.ai = GridValue.cross
+        ttt.board.turn = ttt.board.human
       elif ttt.isInBounds(pos, newSquare(64, 74, 76, 86)):
-        ttt.human = GridValue.cross
-        ttt.humanPotential = GridValue.pCross
-        ttt.ai = GridValue.naught
-        ttt.turn = ttt.human
+        ttt.board.human = GridValue.cross
+        ttt.board.humanPotential = GridValue.pCross
+        ttt.board.ai = GridValue.naught
+        ttt.board.turn = ttt.board.human
       elif ttt.isInBounds(pos, newSquare(52, 102, 76, 114)):
         ttt.started = true
   else:
     ttt.board.cleanGrid()
     ttt.board.availablePositions = ttt.board.getAvailablePositions(ttt.board.grid)
-    (ttt.gameOver, ttt.gameResult) = ttt.board.isGameOver(ttt.board.grid, ttt.board.availablePositions)
-    if ttt.turn == ttt.human and ttt.gameOver == false:
+    (ttt.board.gameOver, ttt.board.gameResult) = ttt.board.isGameOver(ttt.board.grid, ttt.board.availablePositions)
+    if ttt.board.turn == ttt.board.human and ttt.board.gameOver == false:
       pos = mouse()
       if not ttt.isOutOfBounds(pos, ttt.gridSquare):
         let
@@ -83,14 +83,13 @@ proc gameUpdate*(dt: float32) =
           y = (pos[1] - ttt.offset) div ttt.size
           i = xyIndex(x, y)
         if ttt.board.grid[i] == GridValue.none:
-          ttt.board.grid[i] = ttt.humanPotential
+          ttt.board.grid[i] = ttt.board.humanPotential
 
       pressed = mousebtnp(0)
       if pressed:
         pos = mouse()
         if ttt.isOutOfBounds(pos, ttt.gridSquare):
           if ttt.isInBounds(pos, newSquare(118, 118, 125, 125)):
-            echo pos
             ttt.showRules = not ttt.showRules
             ttt.outOfBounds = false
           else:
@@ -100,13 +99,13 @@ proc gameUpdate*(dt: float32) =
             x = (pos[0] - ttt.offset) div ttt.size
             y = (pos[1] - ttt.offset) div ttt.size
             i = xyIndex(x, y)
-          ttt.successfulMove = ttt.board.placePiece(newPosition(i), ttt.human)
+          ttt.successfulMove = ttt.board.placePiece(newPosition(i), ttt.board.human)
           if ttt.successfulMove:
-            ttt.turn = ttt.ai
-    elif ttt.turn == ttt.ai and ttt.gameOver == false:
-      ttt.successfulMove = ttt.board.moveAI(ttt.ai, ttt.difficulty)
+            ttt.board.turn = ttt.board.ai
+    elif ttt.board.turn == ttt.board.ai and ttt.board.gameOver == false:
+      ttt.successfulMove = ttt.board.moveAI(ttt.board.ai, ttt.board.difficulty)
       if ttt.successfulMove:
-        ttt.turn = ttt.human
+        ttt.board.turn = ttt.board.human
 
 nico.init(orgName, appName)
 fixedSize(true)

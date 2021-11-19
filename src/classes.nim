@@ -6,7 +6,7 @@ type
   GridValue* = enum
     none = " ", naught, pNaught = "O", cross, pCross = "X"
   Difficulty* = enum
-    easy = 6, medium = 7, hard = 8
+    easy = 6, medium = 7, hard = 8, impossible = 9
 
 class pub Position:
   var
@@ -50,9 +50,17 @@ class pub Board:
     dimension*: int
     grid*: seq[GridValue]
     availablePositions*: seq[Position]
+    gameOver* = false
+    gameResult* = GridValue.none
+    ai* = GridValue.naught
+    human* = GridValue.cross
+    humanPotential* = GridValue.pCross
+    turn* = GridValue.cross
+    difficulty*: Difficulty
 
-  proc `new`(dimension: int = 3): Board =
+  proc `new`(difficulty: Difficulty, dimension: int = 3): Board =
     self.dimension = dimension
+    self.difficulty = difficulty
     for i in 0 ..< self.dimension * self.dimension:
       self.grid.add GridValue.none
       self.availablePositions.add newPosition(i)
@@ -128,15 +136,14 @@ class pub Board:
   proc opposingPlayer*(player: GridValue): GridValue =
     if player == GridValue.cross:
       return GridValue.naught
-    else:
+    elif player == GridValue.naught:
       return GridValue.cross
 
   proc minimax*(
     player: GridValue,
     grid: seq[GridValue],
     depth: int,
-    alpha, beta: BiggestInt,
-    maximising: bool
+    alpha, beta: BiggestInt
   ): Position =
     var
       gridCopy: seq[GridValue]
@@ -153,9 +160,9 @@ class pub Board:
       (gameOver, winner) = self.isGameOver(grid, availablePositions)
 
     if gameOver:
-      if winner == player and maximising == true:
+      if winner == self.ai:
         return newPosition(-1, score = 1, depth = depth)
-      elif winner == player and maximising == false:
+      elif winner == self.human:
         return newPosition(-1, score = -1, depth = depth)
       else:
         return newPosition(-1, score = 0, depth = depth)
@@ -163,19 +170,18 @@ class pub Board:
     for pos in availablePositions:
       gridCopy = grid
       gridCopy[pos.i] = player
+      nextPlayer = self.opposingPlayer(player)
 
-      if maximising:
-        nextPlayer = self.opposingPlayer(player)
-        currentPos = self.minimax(nextPlayer, gridCopy, depth + 1, alpha, beta, false)
+      if player == self.ai:
+        currentPos = self.minimax(nextplayer, gridCopy, depth + 1, alpha, beta)
         currentPos.i = pos.i
         if maxPos.i == -1 or currentPos.score > maxPos.score:
           maxPos.i = currentPos.i
           maxPos.score = currentPos.score
           maxPos.depth = depth
           alpha = max(currentPos.score, alpha)
-      else:
-        nextPlayer = self.opposingPlayer(player)
-        currentPos = self.minimax(nextPlayer, gridCopy, depth + 1, alpha, beta, true)
+      elif player == self.human:
+        currentPos = self.minimax(nextplayer, gridCopy, depth + 1, alpha, beta)
         currentPos.i = pos.i
         if minPos.i == -1 or currentPos.score < minPos.score:
           minPos.i = currentPos.i
@@ -190,9 +196,9 @@ class pub Board:
         ind = self.find(currentPos, self.availablePositions)
         self.availablePositions[ind] = currentPos
 
-    if maximising == true:
+    if player == self.ai:
       return maxPos
-    else:
+    elif player == self.human:
       return minPos
 
   proc getBestMove*(
@@ -201,7 +207,7 @@ class pub Board:
     alpha = low(BiggestInt),
     beta = high(BiggestInt)
   ): Position =
-    discard self.minimax(player, self.grid, depth, alpha, beta, true)
+    discard self.minimax(player, self.grid, depth, alpha, beta)
     return max(self.availablePositions)
 
   proc getRandMove*: Position =
@@ -226,23 +232,16 @@ class pub TicTacToe:
   var
     gridBounds*: seq[Square]
     gridSquare*: Square
-    board*: Board = newBoard()
+    board*: Board
     offset* = 16
     size* = 32
     started* = false
     showRules* = false
     outOfBounds* = false
     successfulMove* = true
-    gameOver* = false
-    gameResult* = GridValue.none
-    ai* = GridValue.naught
-    human* = GridValue.cross
-    humanPotential* = GridValue.pCross
-    turn* = GridValue.cross
-    difficulty*: Difficulty
 
   proc `new`(difficulty: Difficulty): TicTacToe =
-    self.difficulty = difficulty
+    self.board = newBoard(difficulty = difficulty)
     var
       x, y, x1, y1: int = self.offset
     for row in 0 ..< self.board.dimension:
@@ -270,23 +269,23 @@ class pub TicTacToe:
     rect(hCenter - d, (screenHeight - padding) - r, hCenter + d, (screenHeight - padding) + r)
 
     setColor(1)
-    if self.difficulty == Difficulty.easy:
+    if self.board.difficulty == Difficulty.easy:
       rectfill(hCenter - (3*d) - 1, diffRowY - r, hCenter - d - 3, diffRowY + r)
     else:
       rect(hCenter - (3*d) - 1, diffRowY - r, hCenter - d - 3, diffRowY + r)
     setColor(4)
-    if self.difficulty == Difficulty.medium:
+    if self.board.difficulty == Difficulty.medium:
       rectfill(hCenter - d - 2, diffRowY - r, hCenter + d + 2, diffRowY + r)
     else:
       rect(hCenter - d - 2, diffRowY - r, hCenter + d + 2, diffRowY + r)
     setColor(8)
-    if self.difficulty == Difficulty.hard:
+    if self.board.difficulty == Difficulty.hard:
       rectfill(hCenter + d + 3, diffRowY - r, hCenter + (3*d) + 1, diffRowY + r)
     else:
       rect(hCenter + d + 3, diffRowY - r, hCenter + (3*d) + 1, diffRowY + r)
 
     setColor(7)
-    if self.human == GridValue.naught:
+    if self.board.human == GridValue.naught:
       rectfill(hCenter - d, playerRowY - r, hCenter, playerRowY + r)
       setColor(0)
     else:
@@ -294,7 +293,7 @@ class pub TicTacToe:
     printc("O", hCenter - r + 1, playerRowY - 2)
 
     setColor(7)
-    if self.human == GridValue.cross:
+    if self.board.human == GridValue.cross:
       rectfill(hCenter, playerRowY - r, hCenter + d, playerRowY + r)
       setColor(0)
     else:
