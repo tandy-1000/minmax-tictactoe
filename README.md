@@ -14,4 +14,4 @@ Compile a release executable: `nimble release`
  - [x] Add varying difficulty level
  - [x] Add start page where you choose player / difficulty
  - [x] Refactor to make player selectable
- - [ ] Add hints page
+ - [x] Add hints page
