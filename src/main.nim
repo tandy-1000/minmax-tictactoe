@@ -64,7 +64,7 @@ proc gameUpdate*(dt: float32) =
     if pressed:
       pos = mouse()
       if ttt.isOutOfBounds(pos, ttt.gridSquare):
-        if pos[0] >= 118 and pos[0] <= 125 and pos[1] >= 118 and pos[1] <= 125:
+        if ttt.isOutOfBounds(pos, newSquare(118, 118, 125, 125)):
           if ttt.showRules:
             ttt.showRules = false
           else:
