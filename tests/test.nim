@@ -171,7 +171,7 @@ suite "Board tests":
       ]
     board.grid = grid
     board.availablePositions = board.getAvailablePositions(grid)
-    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta)
+    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta, true)
     check position.i == 6
 
   test "Get best move: minimise loss":
@@ -198,7 +198,7 @@ suite "Board tests":
       ]
     board.grid = grid
     board.availablePositions = board.getAvailablePositions(grid)
-    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta)
+    let position = board.minimax(GridValue.naught, grid, depth, alpha, beta, true)
     check position.i == 6
 
   test "Get best move: maximise win":
