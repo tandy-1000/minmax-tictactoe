@@ -1,5 +1,6 @@
-import std/enumerate
+import std/[enumerate, random]
 import pkg/[nico, oolib]
+
 
 type
   GridValue* = enum
@@ -26,6 +27,7 @@ func `<`*(a, b: Position): bool = system.`<`(a.score, b.score)
 
 ## func for converting 2D array coordinates to a 1D array index
 func xyIndex*(x, y: int, dimension: int = 3): int = y * dimension + x
+
 
 proc debugPrint*(position: Position): string =
   let str = "i " & $position.i & " score " & $position.score & " depth " & $position.depth
@@ -107,7 +109,10 @@ class pub Board:
       if rowWin or columnWin:
         result = true
 
-  proc isGameOver*(grid: seq[GridValue], availablePositions: seq[Position]): (bool, GridValue) =
+  proc isGameOver*(
+    grid: seq[GridValue],
+    availablePositions: seq[Position]
+  ): (bool, GridValue) =
     # checks whether the board is full
     var
       winner = GridValue.none
@@ -119,7 +124,12 @@ class pub Board:
         gameOver = true
     result = (gameOver, winner)
 
-  proc minimax*(player: GridValue, grid: seq[GridValue], depth: int, alpha, beta: BiggestInt): Position =
+  proc minimax*(
+    player: GridValue,
+    grid: seq[GridValue],
+    depth: int,
+    alpha, beta: BiggestInt
+  ): Position =
     var
       gridCopy: seq[GridValue]
       minPos = newPosition(-1, score = beta)
@@ -174,12 +184,29 @@ class pub Board:
     elif player == GridValue.cross:
       return minPos
 
-  proc getBestMove*(player: GridValue, depth = 0, alpha = low(BiggestInt), beta = high(BiggestInt)): Position =
+  proc getBestMove*(
+    player: GridValue,
+    depth = 0,
+    alpha = low(BiggestInt),
+    beta = high(BiggestInt)
+  ): Position =
     discard self.minimax(player, self.grid, depth, alpha, beta)
     if player == GridValue.naught:
       return max(self.availablePositions)
     elif player == GridValue.cross:
       return min(self.availablePositions)
+
+  proc getRandMove*: Position =
+    return sample(self.availablePositions)
+
+  proc moveAI*(player: GridValue, difficulty: int): bool =
+    var move: Position
+    if self.availablePositions.len <= difficulty:
+      move = self.getBestMove(player)
+    else:
+      move = self.getRandMove()
+
+    return self.placePiece(newPosition(move.i), player)
 
 
 class pub Square:
@@ -200,8 +227,10 @@ class pub TicTacToe:
     gameResult* = GridValue.none
     turn* = GridValue.cross
     showRules* = false
+    difficulty*: int
 
-  proc `new`: TicTacToe =
+  proc `new`(difficulty: int): TicTacToe =
+    self.difficulty = difficulty
     var
       x, y, x1, y1: int = self.offset
     for row in 0 ..< self.board.dimension:

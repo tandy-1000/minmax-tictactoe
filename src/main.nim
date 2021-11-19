@@ -6,7 +6,7 @@ const
   orgName* = "org"
   appName* = "TicTacToe"
 
-var ttt = newTicTacToe()
+var ttt = newTicTacToe(difficulty = 5)
 randomize()
 
 proc gameInit*() =
@@ -80,8 +80,7 @@ proc gameUpdate*(dt: float32) =
         if ttt.successfulMove:
           ttt.turn = GridValue.naught
   elif ttt.turn == GridValue.naught and ttt.gameOver == false:
-    let move = ttt.board.getBestMove(GridValue.naught)
-    ttt.successfulMove = ttt.board.placePiece(newPosition(move.i), GridValue.naught)
+    ttt.successfulMove = ttt.board.moveAI(GridValue.naught, ttt.difficulty)
     if ttt.successfulMove:
       ttt.turn = GridValue.cross
 
