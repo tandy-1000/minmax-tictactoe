@@ -83,7 +83,7 @@ proc gameUpdate*(dt: float32) =
         let
           x = (pos[0] - ttt.offset) div ttt.size
           y = (pos[1] - ttt.offset) div ttt.size
-          i = xyIndex(x, y)
+          i = ttt.board.xyIndex(x, y)
         if ttt.board.grid[i] == GridValue.none:
           ttt.board.grid[i] = ttt.board.humanPotential
 
@@ -100,7 +100,7 @@ proc gameUpdate*(dt: float32) =
           let
             x = (pos[0] - ttt.offset) div ttt.size
             y = (pos[1] - ttt.offset) div ttt.size
-            i = xyIndex(x, y)
+            i = ttt.board.xyIndex(x, y)
           ttt.successfulMove = ttt.board.placePiece(newPosition(i), ttt.board.human)
           if ttt.successfulMove:
             ttt.board.turn = ttt.board.ai

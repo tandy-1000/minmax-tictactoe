@@ -26,9 +26,6 @@ func `==`*(a, b: Position): bool = system.`==`(a, b) or (a.i == b.i)
 func `>`*(a, b: Position): bool = system.`>`(a.score, b.score)
 func `<`*(a, b: Position): bool = system.`<`(a.score, b.score)
 
-## func for converting 2D array coordinates to a 1D array index
-func xyIndex*(x, y: int, dimension: int = 3): int = y * dimension + x
-
 
 proc debugPrint*(position: Position): string =
   let str = "i " & $position.i & " score " & $position.score & " depth " & $position.depth
@@ -37,7 +34,7 @@ proc debugPrint*(position: Position): string =
 proc debugGrid*(grid: seq[GridValue]): string =
   for y in 0 ..< 3:
     for x in 0 ..< 3:
-      result.add $grid[xyIndex(x, y)] & " "
+      result.add $grid[y * 3 + x] & " "
     result.add "\n"
 
 proc debug*(positions: seq[Position]): string =
@@ -102,6 +99,9 @@ class pub Board:
     else:
       return false
 
+  ## proc for converting 2D array coordinates to a 1D array index
+  proc xyIndex*(x, y: int): int = y * self.dimension + x
+
   proc hasPlayerWon*(player: GridValue, grid: seq[GridValue]): bool =
     ## assertions for diagonal wins
     let
@@ -113,8 +113,8 @@ class pub Board:
     var rowWin, columnWin: bool
     for i in 0 ..< self.dimension:
       ## assertions for each row / column win
-      rowWin = grid[xyIndex(0, i)] == player and grid[xyIndex(1, i)] == player and grid[xyIndex(2, i)] == player
-      columnWin = grid[xyIndex(i, 0)] == player and grid[xyIndex(i, 1)] == player and grid[xyIndex(i, 2)] == player
+      rowWin = grid[self.xyIndex(0, i)] == player and grid[self.xyIndex(1, i)] == player and grid[self.xyIndex(2, i)] == player
+      columnWin = grid[self.xyIndex(i, 0)] == player and grid[self.xyIndex(i, 1)] == player and grid[self.xyIndex(i, 2)] == player
       if rowWin or columnWin:
         result = true
 
