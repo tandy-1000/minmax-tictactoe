@@ -53,8 +53,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: *
+          file: D:\a\minmax-tictactoe\minmax-tictactoe\minmax-tictactoe\tictactoe.zip
           tag: ${{ github.ref }}
           overwrite: true
-          fileglob: true
           body: "Windows Build"
