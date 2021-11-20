@@ -44,7 +44,7 @@ jobs:
         run: nimble release
 
       - name: Create release zip
-        run: zip tictactoe.zip tictactoe.exe SDL2.dll
+        run: Compress-Archive -Path tictactoe.exe,SDL2.dll -DestinationPath tictactoe.zip
 
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
