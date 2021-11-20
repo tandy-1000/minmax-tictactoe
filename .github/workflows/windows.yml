@@ -1,11 +1,9 @@
 name: Windows build
 on:
   push:
-    tags:
-      - '*'
-      paths:
-        - ".github/workflows/*"
-        - "src/*"
+    paths:
+      - ".github/workflows/*"
+      - "src/*"
 
 jobs:
   build:
