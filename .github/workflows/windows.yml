@@ -1,9 +1,11 @@
 name: Windows build
 on:
   push:
-    paths:
-      - ".github/workflows/*"
-      - "src/*"
+    tags:
+      - '*'
+      paths:
+        - ".github/workflows/*"
+        - "src/*"
 
 jobs:
   build:
@@ -42,3 +44,12 @@ jobs:
 
       - name: Compile release build
         run: nimble release
+
+      - name: Upload release
+        uses: meeDamian/github-release@2.0
+        with:
+          name: Windows Build
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: >
+            tictactoe.exe
+            SDL2.dll
