@@ -1,7 +1,7 @@
 # Package
 
 version = "0.1.0"
-author = " "
+author = "tandy1000"
 description = "tictactoe"
 license = "MIT"
 
