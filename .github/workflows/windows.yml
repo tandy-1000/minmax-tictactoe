@@ -54,7 +54,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: tictactoe.zip
-          asset_name: tictactoe
           tag: ${{ github.ref }}
           overwrite: true
           body: "Windows Build"
