@@ -46,9 +46,6 @@ jobs:
       - name: Create release zip
         run: Compress-Archive -Path tictactoe.exe,SDL2.dll -DestinationPath tictactoe.zip
 
-      - name: huh
-        run: dir
-
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
