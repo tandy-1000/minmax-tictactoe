@@ -43,11 +43,15 @@ jobs:
       - name: Compile release build
         run: nimble release
 
+      - name: Create release zip
+        run: zip tictactoe.zip tictactoe.exe SDL2.dll
+
       - name: Upload release
-        uses: meeDamian/github-release@2.0
+        uses: svenstaro/upload-release-action@v2
         with:
-          name: Windows Build
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: >
-            tictactoe.exe
-            SDL2.dll
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: tictactoe.zip
+          asset_name: tictactoe
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "Windows Build"
